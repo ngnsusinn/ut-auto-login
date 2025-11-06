@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "UT Auto Login",
+  "version": "1.0.0",
+  "description": "Tự động đăng nhập vào portal.ut.edu.vn, courses.ut.edu.vn và thnn.ut.edu.vn",
+  "permissions": [
+    "storage",
+    "cookies",
+    "tabs",
+    "alarms",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://portal.ut.edu.vn/*",
+    "https://courses.ut.edu.vn/*",
+    "https://thnn.ut.edu.vn/*",
+    "https://api.ngnsusinn.io.vn/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://courses.ut.edu.vn/*",
+        "https://thnn.ut.edu.vn/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://portal.ut.edu.vn/*"
+      ],
+      "js": ["portal_content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icons/icon.png"
+  },
+  "icons": {
+    "48": "icons/icon.png"
+  }
+}
