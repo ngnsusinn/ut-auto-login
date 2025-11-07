@@ -135,7 +135,7 @@ function handleMessage(request, sender, sendResponse) {
 
   if (request.action === 'clearAuthData') {
 
-    chrome.storage.local.remove(['token', 'userProfile', 'userRole', 'loginTime']);
+    chrome.storage.local.remove(['token', 'userProfile', 'userRole', 'loginTime', 'username', 'password']);
     sendResponse({ success: true });
     return;
   }

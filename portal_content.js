@@ -1,3 +1,28 @@
+// Inject script vào page context để ghi đè fetch/XHR
+function injectBypassScript() {
+  try {
+    const script = document.createElement('script');
+    script.src = chrome.runtime.getURL('inject.js');
+    script.onload = function () {
+      this.remove();
+    };
+    (document.head || document.documentElement).appendChild(script);
+  } catch (e) {
+    // Silent fail
+  }
+}
+
+// Gửi trạng thái bypass tới inject.js thông qua CustomEvent
+function sendBypassState(shouldBlock) {
+  try {
+    window.dispatchEvent(new CustomEvent('uth-set-notify-bypass-state', {
+      detail: { block: shouldBlock }
+    }));
+  } catch (e) {
+    // Silent fail
+  }
+}
+
 async function getValidToken() {
   try {
     let { token, userRole } = await chrome.storage.local.get(['token', 'userRole']);
@@ -34,12 +59,22 @@ async function getValidToken() {
   }
 }
 
+// Early init for portal (document_start)
 (async function main() {
   try {
+    if (!location.hostname.endsWith('portal.ut.edu.vn')) return;
 
-    if (!location.hostname.endsWith('portal.ut.edu.vn')) {
-      return;
-    }
+    // Inject script vào trang ASAP
+    injectBypassScript();
+
+    // Đọc trạng thái toggle và gửi tới inject.js
+    const { blockPortalNotifications } = await chrome.storage.local.get({ blockPortalNotifications: false });
+    const shouldBlock = blockPortalNotifications; // blockPortalNotifications=true => chặn
+    
+    // Đợi inject.js sẵn sàng rồi gửi state
+    setTimeout(() => {
+      sendBypassState(shouldBlock);
+    }, 50);
 
     const hasReloaded = sessionStorage.getItem('ut_auto_login_reloaded_once') === '1';
     const accountInStorage = localStorage.getItem('account');
@@ -140,3 +175,23 @@ setInterval(async () => {
 
   lastAccountValue = currentAccount;
 }, 500); 
+
+// React to toggle changes without full reload
+// Lắng nghe thay đổi toggle trong popup
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.blockPortalNotifications && location.hostname.endsWith('portal.ut.edu.vn')) {
+    const shouldBlock = changes.blockPortalNotifications.newValue;
+    sendBypassState(shouldBlock);
+  }
+});
+
+// Lắng nghe yêu cầu từ inject.js về initial state
+window.addEventListener('uth-get-initial-notify-state', async function () {
+  try {
+    const { blockPortalNotifications } = await chrome.storage.local.get({ blockPortalNotifications: false });
+    const shouldBlock = blockPortalNotifications;
+    sendBypassState(shouldBlock);
+  } catch (e) {
+    // Silent fail
+  }
+});

@@ -42,5 +42,11 @@
   },
   "icons": {
     "48": "icons/icon.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": ["https://portal.ut.edu.vn/*"]
+    }
+  ]
 }

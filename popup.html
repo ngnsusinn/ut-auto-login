@@ -3,17 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UT Auto Login</title>
+  <title>UTH Auto Login</title>
   <link rel="stylesheet" href="popup.css">
-  <style>
-
-    .spinner{border:4px solid rgba(0,0,0,.1);border-left-color:rgb(0,134,137);border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;margin:0 auto}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-  </style>
   </head>
 <body>
   <div class="header">
-    <img src="icons/icon.png" alt="Logo">
-    <h1>UT Auto Login</h1>
+    <img src="icons/icon_header.png" alt="Logo">
+    <h1>UTH Auto Login</h1>
   </div>
 
   <div class="container">
@@ -26,11 +22,11 @@
       <form id="login">
         <div class="form-group">
           <label for="username">Tài khoản</label>
-          <input type="text" id="username" name="username" required autocomplete="username">
+          <input type="text" id="username" name="username" required autocomplete="username" placeholder="Tài khoản đăng nhập">
         </div>
         <div class="form-group">
           <label for="password">Mật khẩu</label>
-          <input type="password" id="password" name="password" required autocomplete="current-password">
+          <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Mật khẩu">
         </div>
         <button type="submit">Đăng nhập</button>
         <p id="loginError"></p>
@@ -57,6 +53,14 @@
     <span class="footer-label">Bật/Tắt Extension</span>
     <label class="switch">
       <input type="checkbox" id="extensionToggle" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="footer" style="border-top:none; margin-top:-8px;">
+    <span class="footer-label">Chặn thông báo Portal</span>
+    <label class="switch">
+      <input type="checkbox" id="portalNotifyToggle">
       <span class="slider"></span>
     </label>
   </div>

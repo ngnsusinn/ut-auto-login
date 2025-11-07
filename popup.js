@@ -4,6 +4,7 @@ const loading = document.getElementById('loading');
 const loginError = document.getElementById('loginError');
 const logoutBtn = document.getElementById('logoutBtn');
 const extensionToggle = document.getElementById('extensionToggle');
+const portalNotifyToggle = document.getElementById('portalNotifyToggle');
 
 function setActionIcon(enabled) {
 
@@ -13,9 +14,9 @@ function setActionIcon(enabled) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-
-  const { extensionEnabled } = await chrome.storage.local.get({ extensionEnabled: true });
+  const { extensionEnabled, blockPortalNotifications } = await chrome.storage.local.get({ extensionEnabled: true, blockPortalNotifications: false });
   extensionToggle.checked = extensionEnabled;
+  portalNotifyToggle.checked = blockPortalNotifications;
 
   setActionIcon(extensionEnabled);
 
@@ -37,6 +38,11 @@ extensionToggle.addEventListener('change', async (e) => {
   } else {
     showDisabledState();
   }
+});
+
+portalNotifyToggle.addEventListener('change', async (e) => {
+  const value = e.target.checked;
+  await chrome.storage.local.set({ blockPortalNotifications: value });
 });
 
 function showDisabledState() {
@@ -153,11 +159,12 @@ logoutBtn.addEventListener('click', async () => {
 });
 
 async function handleLogout() {
-  await chrome.storage.local.remove(['token', 'userProfile', 'userRole', 'loginTime']);
+  // Xóa toàn bộ thông tin đăng nhập để ngăn tự đăng nhập lại
+  await chrome.storage.local.remove(['token', 'userProfile', 'userRole', 'loginTime', 'username', 'password']);
   chrome.runtime.sendMessage({ action: 'clearAuthData' });
 
-  const { username, password } = await chrome.storage.local.get(['username', 'password']);
-  showLoginForm(username, password);
+  // Hiển thị form trống
+  showLoginForm('', '');
 }
 
 function showLoading(show) {
