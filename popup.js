@@ -6,21 +6,12 @@ const logoutBtn = document.getElementById('logoutBtn');
 const extensionToggle = document.getElementById('extensionToggle');
 const portalNotifyToggle = document.getElementById('portalNotifyToggle');
 
-function setActionIcon(enabled) {
-
-  chrome.action.setIcon({
-    path: enabled ? 'icons/icon.png' : 'icons/icon_disabled.png'
-  });
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
-  const { extensionEnabled, blockPortalNotifications } = await chrome.storage.local.get({ extensionEnabled: true, blockPortalNotifications: false });
-  extensionToggle.checked = extensionEnabled;
+  const { autoLoginEnabled, blockPortalNotifications } = await chrome.storage.local.get({ autoLoginEnabled: true, blockPortalNotifications: false });
+  extensionToggle.checked = autoLoginEnabled;
   portalNotifyToggle.checked = blockPortalNotifications;
 
-  setActionIcon(extensionEnabled);
-
-  if (extensionEnabled) {
+  if (autoLoginEnabled) {
     await checkExistingLogin();
   } else {
     showDisabledState();
@@ -29,13 +20,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 extensionToggle.addEventListener('change', async (e) => {
   const isEnabled = e.target.checked;
-  await chrome.storage.local.set({ extensionEnabled: isEnabled });
-
-  setActionIcon(isEnabled);
+  await chrome.storage.local.set({ autoLoginEnabled: isEnabled });
 
   if (isEnabled) {
     await checkExistingLogin();
   } else {
+    // Khi tắt auto login: xóa toàn bộ dữ liệu đăng nhập để ngăn tái sử dụng token
+    await chrome.storage.local.remove(['token','userProfile','userRole','loginTime','username','password']);
+    chrome.runtime.sendMessage({ action: 'clearAuthData' });
     showDisabledState();
   }
 });
@@ -49,7 +41,7 @@ function showDisabledState() {
   loginForm.style.display = 'none';
   userProfile.style.display = 'none';
   loading.style.display = 'block';
-  loading.innerHTML = '<p style="text-align: center; color: #6c757d;">Extension đã tắt</p>';
+  loading.innerHTML = '<p style="text-align: center; color: #6c757d;">Tự động đăng nhập đã tắt</p>';
 }
 
 async function checkExistingLogin() {

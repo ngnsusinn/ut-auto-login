@@ -4,6 +4,10 @@
     const host = location.hostname;
     if (host !== 'courses.ut.edu.vn' && host !== 'thnn.ut.edu.vn') return;
 
+    // Kiểm tra auto login có được bật không
+    const { autoLoginEnabled } = await chrome.storage.local.get({ autoLoginEnabled: true });
+    if (!autoLoginEnabled) return;
+
     const url = new URL(location.href);
     if (url.searchParams.has('token')) return; 
 
@@ -32,6 +36,12 @@ async function init() {
   const hostname = window.location.hostname;
 
   if (hostname !== 'courses.ut.edu.vn' && hostname !== 'thnn.ut.edu.vn') {
+    return;
+  }
+
+  // Kiểm tra auto login có được bật không
+  const { autoLoginEnabled } = await chrome.storage.local.get({ autoLoginEnabled: true });
+  if (!autoLoginEnabled) {
     return;
   }
 
@@ -113,6 +123,12 @@ async function performAutoLogin(token) {
 }
 
 setInterval(async () => {
+  // Kiểm tra auto login có được bật không
+  const { autoLoginEnabled } = await chrome.storage.local.get({ autoLoginEnabled: true });
+  if (!autoLoginEnabled) {
+    return;
+  }
+
   const isLoggedIn = checkIfLoggedIn();
   if (!isLoggedIn) {
     const { token } = await chrome.storage.local.get(['token']);

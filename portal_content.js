@@ -25,10 +25,15 @@ function sendBypassState(shouldBlock) {
 
 async function getValidToken() {
   try {
+    // Kiểm tra auto login có được bật không
+    const { autoLoginEnabled } = await chrome.storage.local.get({ autoLoginEnabled: true });
+    if (!autoLoginEnabled) {
+      return { token: null, userRole: null };
+    }
+
     let { token, userRole } = await chrome.storage.local.get(['token', 'userRole']);
 
     if (!token) {
-
       const reloginResp = await chrome.runtime.sendMessage({ action: 'forceRelogin' });
       if (reloginResp && reloginResp.success && reloginResp.token) {
         const fresh = await chrome.storage.local.get(['token', 'userRole']);
@@ -63,6 +68,12 @@ async function getValidToken() {
 (async function main() {
   try {
     if (!location.hostname.endsWith('portal.ut.edu.vn')) return;
+
+    // Kiểm tra auto login có được bật không
+    const { autoLoginEnabled } = await chrome.storage.local.get({ autoLoginEnabled: true });
+    if (!autoLoginEnabled) {
+      return; // Dừng ngay nếu auto login bị tắt
+    }
 
     // Inject script vào trang ASAP
     injectBypassScript();
@@ -135,6 +146,12 @@ let lastAccountValue = localStorage.getItem('account');
 let isReloggingIn = false;
 
 setInterval(async () => {
+  // Kiểm tra auto login có được bật không
+  const { autoLoginEnabled } = await chrome.storage.local.get({ autoLoginEnabled: true });
+  if (!autoLoginEnabled) {
+    return; // Dừng interval nếu auto login bị tắt
+  }
+
   const currentAccount = localStorage.getItem('account');
 
   if (lastAccountValue && !currentAccount && !isReloggingIn) {
@@ -193,5 +210,20 @@ window.addEventListener('uth-get-initial-notify-state', async function () {
     sendBypassState(shouldBlock);
   } catch (e) {
     // Silent fail
+  }
+});
+
+// Khi người dùng tắt autoLoginEnabled từ popup, dọn dẹp localStorage/sessionStorage trên portal để ngăn duy trì phiên hiện tại
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.autoLoginEnabled && location.hostname.endsWith('portal.ut.edu.vn')) {
+    const enabled = changes.autoLoginEnabled.newValue;
+    if (!enabled) {
+      try {
+        localStorage.removeItem('account');
+        localStorage.removeItem('role');
+        try { localStorage.removeItem('body'); } catch {}
+        sessionStorage.removeItem('ut_auto_login_reloaded_once');
+      } catch (e) { /* silent */ }
+    }
   }
 });

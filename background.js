@@ -1,18 +1,24 @@
 const PROXY_BASE_URL = 'https://api.ngnsusinn.io.vn/ut-proxy/';
 
+// Các hành động được phép chạy ngay cả khi auto login bị tắt
+const ALLOWED_ACTIONS_WHEN_DISABLED = [
+  'clearAuthData' 
+  // Các action khác cần chạy khi tắt auto-login có thể thêm vào đây
+];
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  (async () => {
+    const { autoLoginEnabled } = await chrome.storage.local.get({ autoLoginEnabled: true });
 
-  chrome.storage.local.get({ extensionEnabled: true }, (result) => {
-    if (!result.extensionEnabled && request.action !== 'forceRelogin' && request.action !== 'checkTokenValidity') {
-
-      if (request.action === 'performLogin') {
-        sendResponse({ success: false, error: 'Extension is disabled' });
-      }
+    // Nếu auto login bị tắt và action không được cho phép, từ chối ngay
+    if (!autoLoginEnabled && !ALLOWED_ACTIONS_WHEN_DISABLED.includes(request.action)) {
+      sendResponse({ success: false, error: 'Auto login is disabled.', from: 'background_guard' });
       return;
     }
 
+    // Nếu mọi thứ ổn, xử lý message
     handleMessage(request, sender, sendResponse);
-  });
+  })();
 
   return true; 
 });
@@ -213,8 +219,8 @@ if (chrome.alarms) {
 
   chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === 'checkToken') {
-      const { extensionEnabled } = await chrome.storage.local.get({ extensionEnabled: true });
-      if (!extensionEnabled) {
+      const { autoLoginEnabled } = await chrome.storage.local.get({ autoLoginEnabled: true });
+      if (!autoLoginEnabled) {
         return;
       }
 
@@ -301,31 +307,3 @@ if (chrome.alarms) {
 } else {
 
 }
-
-chrome.runtime.onInstalled.addListener(() => {
-
-  chrome.storage.local.get({ extensionEnabled: true }, (result) => {
-    chrome.action.setIcon({
-      path: result.extensionEnabled ? 'icons/icon.png' : 'icons/icon_disabled.png'
-    });
-  });
-});
-
-if (chrome.runtime.onStartup) {
-  chrome.runtime.onStartup.addListener(() => {
-    chrome.storage.local.get({ extensionEnabled: true }, (result) => {
-      chrome.action.setIcon({
-        path: result.extensionEnabled ? 'icons/icon.png' : 'icons/icon_disabled.png'
-      });
-    });
-  });
-}
-
-chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === 'local' && changes.extensionEnabled) {
-    const enabled = changes.extensionEnabled.newValue;
-    chrome.action.setIcon({
-      path: enabled ? 'icons/icon.png' : 'icons/icon_disabled.png'
-    });
-  }
-});
